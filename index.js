@@ -51,11 +51,16 @@ module.exports = (sbot) => {
                 if (msg.value.content.type=="chess_invite_accept") {
                     const gameId = msg.value.content.root
                     state.gamesStarted.push(gameId);
-                    const newInvites = state.invites.filter(game => game.gameId !== gameId);
+
+                    const newInvites = state.invites.filter(game => {
+                        return game.gameId !== gameId
+                    });
                     state.invites = newInvites;
                     return state;                    
                 } else if (msg.value.content.type=="chess_invite" && msg.value.author === playerId) {
-                    const gameId = msg.value.key;
+
+                    const gameId = msg.key;
+
                     // We know that game has started
                     if (state.gamesStarted.indexOf(gameId) != -1) {
                         return state;
