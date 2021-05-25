@@ -9,8 +9,8 @@ module.exports = (sbot) => {
         if (!msg.sync) {
             return msg;
         } else {
-            console.log("IS SYNC")
             msg["source"] = source;
+            return msg;
         }
     }
 
@@ -40,19 +40,13 @@ module.exports = (sbot) => {
             changed: false
         }
 
-        const changesOnlyState = {
-            changed: false,
-            invites: []
-        }
-
         const invitesStateScanFunction = (state, msg) => {
             if (msg.sync && msg.source == "chess_invite") {
                 state.invitesLive = true;
-                console.log("LIVE!! invite")
-
+                return state;
             } else if (msg.sync && msg.source == "chess_invite_accept") {
                 state.acceptsLive = true;
-                console.log("LIVE!! accept")
+                return state;
             } else {
                 if (msg.value.content.type=="chess_invite_accept") {
                     const gameId = msg.value.content.root
@@ -67,7 +61,7 @@ module.exports = (sbot) => {
                         return state;
                     } else {
                         const newState = addGame(state, msg);
-                        return state;
+                        return newState;
                     }
 
                 } else {
@@ -88,24 +82,11 @@ module.exports = (sbot) => {
             return state;
         }
 
-        const trackChanges = (state, newState) => {
-            if (state.inviting.length !== newState.length) {
-                return {
-                    changed: true,
-                    invites: newState.invites
-                }
-            } else {
-                state.changed = false;
-            }
-        }
-
+        // TODO: filter out duplicate values...
         return pull(
             many([inviteMessages, acceptMessages]),
             scan(invitesStateScanFunction, scanState),
-            pull.filter(state => state.invitesLive && state.acceptsLive && state.changed == true),
-            pull.map(state => state.invites),
-            scan(trackChanges, changesOnlyState),
-            pull.filter(result => result.changed),
+            pull.filter(state => state.invitesLive && state.acceptsLive),
             pull.map(state => state.invites)
         );
     }

@@ -10,3 +10,4 @@ ssbClient((err, client) => {
 
     pull(source, pull.drain(state => console.log(state)));
 })
+
