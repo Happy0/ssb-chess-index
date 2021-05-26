@@ -1,6 +1,7 @@
 const pull = require('pull-stream')
 const many = require('pull-many')
 const scan = require('pull-scan')
+const dedup = require('./pull-dedup')
 
 module.exports = (sbot) => {
 
@@ -92,7 +93,8 @@ module.exports = (sbot) => {
             many([inviteMessages, acceptMessages]),
             scan(invitesStateScanFunction, scanState),
             pull.filter(state => state.invitesLive && state.acceptsLive),
-            pull.map(state => state.invites)
+            pull.map(state => state.invites),
+            dedup((x,y) => x.length == y.length, [])
         );
     }
   
