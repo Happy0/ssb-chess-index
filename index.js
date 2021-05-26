@@ -17,6 +17,8 @@ module.exports = (sbot) => {
 
     const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
     const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+    const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+
   
     /**
      * A pull-stream source of the changing array of invites sent by the given
@@ -41,6 +43,8 @@ module.exports = (sbot) => {
             changed: false
         }
 
+        // Changes the 'invites' list when the user sends a new invite, or an invite
+        // the user has sent is accepted
         const invitesStateScanFunction = (state, msg) => {
             if (msg.sync && msg.source == "chess_invite") {
                 state.invitesLive = true;
@@ -120,6 +124,8 @@ module.exports = (sbot) => {
             changed: false
         }
 
+        // Changes the 'invites' list when a user receives an invite, and when
+        // a user accepts an invite (removing it from the pending invites)
         const invitesStateScanFunction = (state, msg) => {
             if (msg.sync && msg.source == "chess_invite") {
                 state.invitesLive = true;
@@ -179,6 +185,7 @@ module.exports = (sbot) => {
   
     /**
      * A pull-stream source of the changing array of the games the user has in progress.
+     * Only the game IDs are present in the array.
      * 
      * Changes when games finish or when a new game begins after an invite has been accepted
      * 
@@ -187,8 +194,18 @@ module.exports = (sbot) => {
      * 
      * @param {*} id the user ID 
      */
-    function getGamesInProgress(id) {
-  
+    function getGamesInProgressIds(id) {
+        const scanState = {
+            acceptsLive: false,
+            finishedsLive: false,
+            inProgress: [],
+            finished: [],
+            changed: false
+        }
+
+
+
+        
     }
   
     /**
@@ -203,12 +220,13 @@ module.exports = (sbot) => {
      * 
      * @param {*} id the user ID 
      */
-    function getObservableGames(id) {
+    function getObservableGamesIds(id) {
   
     }
   
     /**
      * A pull-stream source of the changing of the games the user has finished.
+     * Only the game IDs are present in the array.
      * 
      * Changes when a game finishes that the user is a player in 
      * 
@@ -217,7 +235,7 @@ module.exports = (sbot) => {
      * 
      * @param {*} id the user ID 
      */
-    function getGamesFinished(playerId) {
+    function getGamesFinishedIds(playerId) {
   
     }
   
@@ -274,7 +292,7 @@ module.exports = (sbot) => {
     return {
         pendingChallengesSent,
         pendingChallengesReceived,
-        getGamesInProgress,
+        getGamesInProgressIds,
         getObservableGames,
         getGamesFinished,
         getAllGamesInDb,
