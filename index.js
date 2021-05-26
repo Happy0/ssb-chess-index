@@ -39,8 +39,7 @@ module.exports = (sbot) => {
             acceptsLive: false,
             invites: [],
             // A list of the game IDs of every game with an accepted invite
-            gamesStarted: [],
-            changed: false
+            gamesStarted: []
         }
 
         // Changes the 'invites' list when the user sends a new invite, or an invite
@@ -120,8 +119,7 @@ module.exports = (sbot) => {
             acceptsLive: false,
             invites: [],
             // A list of the game IDs of every game with an accepted invite
-            gamesStarted: [],
-            changed: false
+            gamesStarted: []
         }
 
         // Changes the 'invites' list when a user receives an invite, and when
@@ -195,18 +193,52 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getGamesInProgressIds(id) {
-        const scanState = {
-            acceptsLive: false,
-            finishedsLive: false,
-            inProgress: [],
-            finished: [],
-            changed: false
+        // WIP
+
+        const myAccepted = pull(acceptMessages, pull.filter(msg => msg.sync || msg.value.author === id));
+        const mySent = pull(inviteMessages, pull.filter(msg => msg.sync || msg.value.author === id));
+
+        const scanFn = (state, msg) => {
+            const gameId = getGameId(msg);
+
+            if (msg.sync && msg.source == "chess_invite") {
+                state.invitesLive = true;
+            } else if (msg.sync && msg.source == "chess_invite_accept") {
+                state.acceptsLive = true;
+            } else if (msg.sync && msg.source == "chess_game_end") {
+                state.finishedsLive = true;
+            } else if (msg.value.content.type == "chess_invite") {
+
+            } else if (msg.value.content.type == "chess_invite_accept") {
+                
+            } else if (msg.value.content.type == "chess_game_end") {
+                state.finished.push(gameId);
+                delete state.gameStates[gameId];
+            }
+
+            return state;
         }
 
+        const state = {
+            invitesLive: false,
+            acceptsLive: false,
+            finishedsLive: false,
+            finished: [],
+            gameStates: {}
+        }
 
+        const gamesInProgressOnly = (state) => 
+            Object.values(state.gameStates).filter(gameState => gameState.state == "live").map(game => game.gameId);
 
-        
+        return pull(
+            many([mySent, myAccepted, finishMessages]),
+            scan(scanFn, state),
+            pull.filter(state => state.invitesLive && state.acceptsLive && state.finishedsLive),
+            pull.map(state => gamesInProgressOnly(state)),
+            dedup((x,y) => x.length == y.length, [])
+        );
     }
+
   
     /**
      * A pull-stream source of the changing array of the games the user can observe.
@@ -277,16 +309,12 @@ module.exports = (sbot) => {
   
     }
   
-    function getInviteSummary(gameInfo) {
-      var invite = {
-        gameId: gameInfo[ID_FIELD],
-        sentBy: gameInfo[INVITER_FIELD],
-        inviting: gameInfo[INVITEE_FIELD],
-        inviterPlayingAs: gameInfo[INVITER_COLOUR_FIELD],
-        timestamp: gameInfo[UPDATED_FIELD]
-      }
-    
-      return invite;
+    const getGameId = (msg) => {
+        if (msg.value.content.type == "chess_invite") {
+            return msg.key;
+        } else {
+            return msg.value.content.root;
+        }
     }
   
     return {
