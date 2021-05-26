@@ -6,7 +6,7 @@ ssbClient((err, client) => {
 
     var index = Index(client);
     
-    const source = index.pendingChallengesSent("@RJ09Kfs3neEZPrbpbWVDxkN92x9moe3aPusOMOc4S2I=.ed25519");
+    const source = index.pendingChallengesReceived("@coByZxTQOm/340Gc4G/eJwJniEIHjHt0Kh15N611BQ4=.ed25519");
 
     pull(source, pull.drain(state => console.log(state)));
 })

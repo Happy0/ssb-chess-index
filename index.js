@@ -109,8 +109,72 @@ module.exports = (sbot) => {
      * 
      * @param {*} id the user ID 
      */
-    function pendingChallengesReceived(id) {
+    function pendingChallengesReceived(playerId) {
   
+        const scanState = {
+            invitesLive: false,
+            acceptsLive: false,
+            invites: [],
+            // A list of the game IDs of every game with an accepted invite
+            gamesStarted: [],
+            changed: false
+        }
+
+        const invitesStateScanFunction = (state, msg) => {
+            if (msg.sync && msg.source == "chess_invite") {
+                state.invitesLive = true;
+                return state;
+            } else if (msg.sync && msg.source == "chess_invite_accept") {
+                state.acceptsLive = true;
+                return state;
+            } else {
+                if (msg.value.content.type=="chess_invite_accept" && msg.value.author === playerId) {
+                    const gameId = msg.value.content.root
+                    state.gamesStarted.push(gameId);
+
+                    const newInvites = state.invites.filter(game => {
+                        return game.gameId !== gameId
+                    });
+                    state.invites = newInvites;
+                    return state;                    
+                } else if (msg.value.content.type=="chess_invite" && msg.value.content.inviting === playerId ) {
+
+                    const gameId = msg.key;
+
+                    // We know that game has started
+                    if (state.gamesStarted.indexOf(gameId) != -1) {
+                        return state;
+                    } else {
+                        const newState = addGame(state, msg);
+                        return newState;
+                    }
+
+                } else {
+                    return state;
+                }
+            }   
+        }
+
+        const addGame = (state, msg) => {
+            const gameSummary = {
+                gameId: msg.key,
+                sentBy: msg.value.author,
+                inviting: msg.value.content.inviting,
+                inviterPlayingAs: msg.value.content.myColor,
+                timestamp: msg.timestamp
+            }
+            state.invites.push(gameSummary);
+            return state;
+        }
+
+        // TODO: filter out duplicate values...
+        return pull(
+            many([inviteMessages, acceptMessages]),
+            scan(invitesStateScanFunction, scanState),
+            pull.filter(state => state.invitesLive && state.acceptsLive),
+            pull.map(state => state.invites),
+            dedup((x,y) => x.length == y.length, [])
+        );
     }
   
     /**
