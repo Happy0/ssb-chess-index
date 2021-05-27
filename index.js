@@ -193,13 +193,8 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getGamesInProgressIds(id) {
-        // WIP
-
-        const myAccepted = pull(acceptMessages, pull.filter(msg => msg.sync || msg.value.author === id));
-        const mySent = pull(inviteMessages, pull.filter(msg => msg.sync || msg.value.author === id));
 
         const scanFn = (state, msg) => {
-            const gameId = getGameId(msg);
 
             if (msg.sync && msg.source == "chess_invite") {
                 state.invitesLive = true;
@@ -208,10 +203,27 @@ module.exports = (sbot) => {
             } else if (msg.sync && msg.source == "chess_game_end") {
                 state.finishedsLive = true;
             } else if (msg.value.content.type == "chess_invite") {
+                const gameId = getGameId(msg);
+                const playerInInvite = isPlayerInInvite(msg, id);
+                if (playerInInvite && state.finished.indexOf(gameId) == -1 ) {
+                    state.gameStates[gameId] = {
+                        gameId: gameId,
+                        state: state.accepted.indexOf(gameId) !== -1 ? "live": "invited" 
+                    }
+                }
 
             } else if (msg.value.content.type == "chess_invite_accept") {
+                const gameId = getGameId(msg);
+
+                if (state.gameStates[gameId]) {
+                    state.gameStates[gameId].state = "live";
+                } else {
+                    state.accepted.push(gameId);
+                }
                 
             } else if (msg.value.content.type == "chess_game_end") {
+                const gameId = getGameId(msg);
+
                 state.finished.push(gameId);
                 delete state.gameStates[gameId];
             }
@@ -224,14 +236,19 @@ module.exports = (sbot) => {
             acceptsLive: false,
             finishedsLive: false,
             finished: [],
+            accepted: [],
             gameStates: {}
+        }
+
+        const isPlayerInInvite = (msg, id) => {
+            return msg.value.author == id || msg.value.content.inviting == id;
         }
 
         const gamesInProgressOnly = (state) => 
             Object.values(state.gameStates).filter(gameState => gameState.state == "live").map(game => game.gameId);
 
         return pull(
-            many([mySent, myAccepted, finishMessages]),
+            many([finishMessages, inviteMessages, acceptMessages]),
             scan(scanFn, state),
             pull.filter(state => state.invitesLive && state.acceptsLive && state.finishedsLive),
             pull.map(state => gamesInProgressOnly(state)),
@@ -321,8 +338,8 @@ module.exports = (sbot) => {
         pendingChallengesSent,
         pendingChallengesReceived,
         getGamesInProgressIds,
-        getObservableGames,
-        getGamesFinished,
+        getObservableGamesIds,
+        getGamesFinishedIds,
         getAllGamesInDb,
         gameHasPlayer,
         weightedPlayFrequencyList
