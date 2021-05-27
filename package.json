@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Gordon Martin",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "dependencies": {
     "pull-many": "^1.0.9",
     "pull-scan": "^1.0.0",
