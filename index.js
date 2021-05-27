@@ -317,10 +317,6 @@ module.exports = (sbot) => {
             gameStates: {}
         }
 
-        const isPlayerInInvite = (msg, id) => {
-            return msg.value.author == id || msg.value.content.inviting == id;
-        }
-
         const gamesInProgressOnly = (state) => 
             Object.values(state.gameStates).filter(gameState => gameState.state == "live").map(game => game.gameId);
 
@@ -357,7 +353,7 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getAllGamesInDb() {
-  
+        return pull(inviteMessages, pull.filter(x => !x.sync), pull.map(msg => msg.key));
     }
   
     /**
@@ -372,7 +368,16 @@ module.exports = (sbot) => {
      * @param {*} cb 
      */
     function gameHasPlayer(gameId, playerId, cb) {
-  
+        sbot.get(gameId, (err, msg) => {
+            if (msg == null || err) {
+                cb(err, null)
+            } else {
+                msg.value = {};
+                msg.value.content = msg.content;
+
+                cb(null, isPlayerInInvite(msg))
+            }
+        });
     }
   
     /**
@@ -392,6 +397,10 @@ module.exports = (sbot) => {
         } else {
             return msg.value.content.root;
         }
+    }
+
+    const isPlayerInInvite = (msg, id) => {
+        return msg.value.author == id || msg.value.content.inviting == id;
     }
   
     return {

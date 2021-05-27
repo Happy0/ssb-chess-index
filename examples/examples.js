@@ -9,7 +9,9 @@ ssbClient((err, client) => {
     //const source = index.getGamesInProgressIds("@coByZxTQOm/340Gc4G/eJwJniEIHjHt0Kh15N611BQ4=.ed25519");
     const source = index.getObservableGamesIds(me);
 
+    //pull(index.getAllGamesInDb(), pull.drain(msg => console.log(msg)));
 
-    pull(source, pull.take(1), pull.drain(state => console.log(state.length)));
+    index.gameHasPlayer("%QuBX3teq0sviXtWjzUmlcySR1TNH30I3/g+Zja3XKpU=.sha256", me, (err, result) => console.log(result))
+
 })
 
