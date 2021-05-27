@@ -3,16 +3,17 @@ const ssbClient = require('ssb-client');
 const Index = require('../index');
 
 ssbClient((err, client) => {
+    var id = '%qriLIsJGeqkMxjp8h7GYyrfOGOElQ5hAqDn5E/qovq4=.sha256'
     var filterQuery = {
         $filter: {
-          dest: '%nU8BcDdpcD7t3y2MOwhezdqc8ruXxFxOfGL7ZxC8M4g=.sha256'
+          dest: id ,
+          timestamp: { $gt: 0 },
         }
       }
 
       var backlinks = client.backlinks.read({
         query: [filterQuery],
         index: 'DTA', // use asserted timestamps
-        live: true
       });
 
 
