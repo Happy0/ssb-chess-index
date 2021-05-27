@@ -341,7 +341,16 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getGamesFinishedIds(playerId) {
-  
+        return pull(
+            finishMessages,
+            pull.filter(msg => !msg.sync),
+            pull.asyncMap((data, cb) => {
+                const gameId = data.value.content.root;
+
+
+            })
+        
+        )
     }
   
       /**
@@ -373,9 +382,10 @@ module.exports = (sbot) => {
                 cb(err, null)
             } else {
                 msg.value = {};
+                msg.value.author = msg.author;
                 msg.value.content = msg.content;
 
-                cb(null, isPlayerInInvite(msg))
+                cb(null, isPlayerInInvite(msg, playerId))
             }
         });
     }
