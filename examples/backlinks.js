@@ -3,7 +3,7 @@ const ssbClient = require('ssb-client');
 const Index = require('../index');
 
 ssbClient((err, client) => {
-    var id = '%qriLIsJGeqkMxjp8h7GYyrfOGOElQ5hAqDn5E/qovq4=.sha256'
+    var id = '%3nQspEqJZhYbYmqP1WufgUSP7bXtFjylEceMh3dsZhA=.sha256'
     var filterQuery = {
         $filter: {
           dest: id ,
@@ -13,11 +13,10 @@ ssbClient((err, client) => {
 
       var backlinks = client.backlinks.read({
         query: [filterQuery],
-        index: 'DTA', // use asserted timestamps
+        index: 'DTA' // use asserted timestamps
       });
 
 
-    pull(backlinks , pull.drain(msg => console.log(msg)) )
-
+  pull(backlinks , pull.drain(msg => console.log(msg)) )
 
 })

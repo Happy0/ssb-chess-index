@@ -335,9 +335,6 @@ module.exports = (sbot) => {
      * 
      * Changes when a game finishes that the user is a player in 
      * 
-     * Only starts emitting once the internal indexing has processed all current
-     * messages in the system
-     * 
      * @param {*} id the user ID 
      */
     function getGamesFinishedIds(playerId) {
@@ -346,10 +343,15 @@ module.exports = (sbot) => {
             pull.filter(msg => !msg.sync),
             pull.asyncMap((data, cb) => {
                 const gameId = data.value.content.root;
-
-
-            })
-        
+                sbot.get(gameId, (err, result) => {
+                    if (err) {
+                        cb(null, null);
+                    } else {
+                        cb(null, isPlayerInInvite(result, playerId) ? gameId : null )
+                    }
+                })
+            }),
+            pull.filter(id => id != null)
         )
     }
   
@@ -381,10 +383,6 @@ module.exports = (sbot) => {
             if (msg == null || err) {
                 cb(err, null)
             } else {
-                msg.value = {};
-                msg.value.author = msg.author;
-                msg.value.content = msg.content;
-
                 cb(null, isPlayerInInvite(msg, playerId))
             }
         });
@@ -410,6 +408,13 @@ module.exports = (sbot) => {
     }
 
     const isPlayerInInvite = (msg, id) => {
+        // sbot.get has a different schema...
+        if (!msg.value) {
+            msg.value = {};
+            msg.value.author = msg.author;
+            msg.value.content = msg.content;
+        }
+
         return msg.value.author == id || msg.value.content.inviting == id;
     }
   
