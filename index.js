@@ -389,14 +389,29 @@ module.exports = (sbot) => {
     }
   
     /**
-     * A list of the players the player has played with, weighted by the number of times they've played and
-     * how recent those games were
+     * A list of the players the player has played with, weighted by the number of times they've played
      * 
      * Only calls back once the internal indexing has processed all current
      * messages in the system
      */
-    function weightedPlayFrequencyList(playerId, view) {
-  
+    function weightedPlayFrequencyList(playerId, cb) {
+        const invites = pull(sbot.messagesByType({type: "chess_invite"}));
+
+        // todo: make it weight more recent games more strongly
+        pull(invites, pull.reduce((acc, msg) => {
+            if (isPlayerInInvite(msg, playerId)) {
+                const otherPlayer = msg.value.author == playerId ? msg.value.content.inviting : msg.value.author;
+
+                if (acc[otherPlayer]) {
+                    acc[otherPlayer] = acc[otherPlayer] + 1
+                } else {
+                    acc[otherPlayer] = 1
+                }
+
+            }
+
+            return acc;
+        }, {}, cb));
     }
   
     const getGameId = (msg) => {
