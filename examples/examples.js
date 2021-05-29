@@ -6,15 +6,28 @@ ssbClient((err, client) => {
 
     var index = Index(client);
     var me = "@RJ09Kfs3neEZPrbpbWVDxkN92x9moe3aPusOMOc4S2I=.ed25519";
-    var random = "@GgWXfvg2NFTVG/HaaWO1qc4Eqv1k9jq71g8zucQusC0=.ed25519";
+    var random = "@zurF8X68ArfRM71dF3mKh36W0xDM8QmOnAS5bYOq8hA=.ed25519";
 
-    index.weightedPlayFrequencyList(me, (ee, result) => console.log(result));
-    //const source = index.getGamesFinishedIds(me);
+ //   index.weightedPlayFrequencyList(me, (ee, result) => console.log(result));
+    //const source = index.getObservableGames(me);
 
-   // pull(source, pull.asyncMap(client.get),  pull.drain(msg => console.log(msg)));
+    //pull(source, pull.drain(e => console.log(e.length)))
 
+    const rec = pull(index.pendingChallengesSent(me), pull.drain(e => console.log(e)) )
 
-  //  index.gameHasPlayer("%QuBX3teq0sviXtWjzUmlcySR1TNH30I3/g+Zja3XKpU=.sha256", random, (err, result) => console.log(result))
+    getGamesAgreedToPlayIds(index, me).then(e => console.log(e));
+
 
 })
+
+
+function getGamesAgreedToPlayIds(chessIndex, playerId) {
+    return new Promise((resolve, reject) => {
+      pull(
+        chessIndex.getGamesInProgressIds(playerId),
+        pull.take(1),
+        pull.drain(result => resolve(result) )
+      );
+    });
+  }
 

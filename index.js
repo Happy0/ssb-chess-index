@@ -14,11 +14,6 @@ module.exports = (sbot) => {
             return msg;
         }
     }
-
-    const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
-    const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
-    const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
-
   
     /**
      * A pull-stream source of the changing array of invites sent by the given
@@ -33,6 +28,10 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function pendingChallengesSent(playerId) {
+
+        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+
 
         const scanState = {
             invitesLive: false,
@@ -113,6 +112,11 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function pendingChallengesReceived(playerId) {
+
+
+        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+
   
         const scanState = {
             invitesLive: false,
@@ -194,6 +198,10 @@ module.exports = (sbot) => {
      */
     function getGamesInProgressIds(id) {
 
+        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+
         const scanFn = (state, msg) => {
 
             if (msg.sync && msg.source == "chess_invite") {
@@ -270,6 +278,11 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getObservableGamesIds(id) {
+
+        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+
   
         const scanFn = (state, msg) => {
 
@@ -338,6 +351,8 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getGamesFinishedIds(playerId) {
+        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+
         return pull(
             finishMessages,
             pull.filter(msg => !msg.sync),
@@ -364,6 +379,7 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getAllGamesInDb() {
+        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
         return pull(inviteMessages, pull.filter(x => !x.sync), pull.map(msg => msg.key));
     }
   
@@ -394,7 +410,8 @@ module.exports = (sbot) => {
      * Only calls back once the internal indexing has processed all current
      * messages in the system
      */
-    function weightedPlayFrequencyList(playerId, cb) {
+    function weightedPlayFrequencyList(playerId, cb) {    
+
         const invites = pull(sbot.messagesByType({type: "chess_invite"}));
 
         // todo: make it weight more recent games more strongly
@@ -443,5 +460,4 @@ module.exports = (sbot) => {
         gameHasPlayer,
         weightedPlayFrequencyList
     }
-  
   }
