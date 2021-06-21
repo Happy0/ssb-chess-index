@@ -12,6 +12,7 @@
     "tape": "^5.2.2"
   },
   "dependencies": {
+    "ssb-chess-index": "1.0.3",
     "pull-many": "^1.0.9",
     "pull-scan": "^1.0.0",
     "pull-stream": "^3.6.14",
