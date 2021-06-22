@@ -3,7 +3,12 @@ const many = require('pull-many')
 const scan = require('pull-scan')
 const dedup = require('./pull-dedup')
 
-module.exports = (sbot) => {
+/**
+ * 
+ * @param {*} dataAccess an instance implementing the ssb-chess-data-access interface
+ * @returns 
+ */
+module.exports = (dataAccess) => {
 
     // Annotate 'sync' messages (indicating queue is now live) with source message type
     function annotateSync(source, msg) {
@@ -29,9 +34,8 @@ module.exports = (sbot) => {
      */
     function pendingChallengesSent(playerId) {
 
-        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
-        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
-
+        const inviteMessages = pull(dataAccess.chessInviteMessages(true), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(dataAccess.chessInviteAcceptMessages(true), pull.map(msg => annotateSync("chess_invite_accept", msg)));
 
         const scanState = {
             invitesLive: false,
@@ -114,8 +118,8 @@ module.exports = (sbot) => {
     function pendingChallengesReceived(playerId) {
 
 
-        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
-        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+        const inviteMessages = pull(dataAccess.chessInviteMessages(true), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(dataAccess.chessInviteAcceptMessages(true), pull.map(msg => annotateSync("chess_invite_accept", msg)));
 
   
         const scanState = {
@@ -198,9 +202,9 @@ module.exports = (sbot) => {
      */
     function getGamesInProgressIds(id) {
 
-        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
-        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
-        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+        const inviteMessages = pull(dataAccess.chessInviteMessages(true), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(dataAccess.chessInviteAcceptMessages(true), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+        const finishMessages = pull(dataAccess.chessEndMessages(true), pull.map(msg => annotateSync("chess_game_end", msg)));
 
         const scanFn = (state, msg) => {
 
@@ -279,9 +283,9 @@ module.exports = (sbot) => {
      */
     function getObservableGamesIds(id) {
 
-        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
-        const acceptMessages = pull(sbot.messagesByType({type: "chess_invite_accept", live: true}), pull.map(msg => annotateSync("chess_invite_accept", msg)));
-        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+        const inviteMessages = pull(dataAccess.chessInviteMessages(true), pull.map(msg => annotateSync("chess_invite", msg)));
+        const acceptMessages = pull(dataAccess.chessInviteAcceptMessages(true), pull.map(msg => annotateSync("chess_invite_accept", msg)));
+        const finishMessages = pull(dataAccess.chessEndMessages(true), pull.map(msg => annotateSync("chess_game_end", msg)));
 
   
         const scanFn = (state, msg) => {
@@ -351,14 +355,14 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getGamesFinishedIds(playerId) {
-        const finishMessages = pull(sbot.messagesByType({type: "chess_game_end", live: true}), pull.map(msg => annotateSync("chess_game_end", msg)));
+        const finishMessages = pull(dataAccess.chessEndMessages(true), pull.map(msg => annotateSync("chess_game_end", msg)));
 
         return pull(
             finishMessages,
             pull.filter(msg => !msg.sync),
             pull.asyncMap((data, cb) => {
                 const gameId = data.value.content.root;
-                sbot.get(gameId, (err, result) => {
+                dataAccess.getInviteMessage(gameId, (err, result) => {
                     if (err) {
                         cb(null, null);
                     } else {
@@ -379,7 +383,7 @@ module.exports = (sbot) => {
      * @param {*} id the user ID 
      */
     function getAllGamesInDb() {
-        const inviteMessages = pull(sbot.messagesByType({type: "chess_invite", live: true}), pull.map(msg => annotateSync("chess_invite", msg)));
+        const inviteMessages = pull(dataAccess.chessInviteMessages(true), pull.map(msg => annotateSync("chess_invite", msg)));
         return pull(inviteMessages, pull.filter(x => !x.sync), pull.map(msg => msg.key));
     }
   
@@ -395,7 +399,7 @@ module.exports = (sbot) => {
      * @param {*} cb 
      */
     function gameHasPlayer(gameId, playerId, cb) {
-        sbot.get(gameId, (err, msg) => {
+        dataAccess.getInviteMessage(gameId, (err, msg) => {
             if (msg == null || err) {
                 cb(err, null)
             } else {
@@ -412,7 +416,7 @@ module.exports = (sbot) => {
      */
     function weightedPlayFrequencyList(playerId, cb) {    
 
-        const invites = pull(sbot.messagesByType({type: "chess_invite"}));
+        const invites = pull(dataAccess.chessInviteMessages(false));
 
         // todo: make it weight more recent games more strongly
         pull(invites, pull.reduce((acc, msg) => {
