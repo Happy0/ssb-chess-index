@@ -4,15 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier": "prettier . --write"
   },
   "author": "Gordon Martin",
   "license": "MIT",
   "devDependencies": {
-    "tape": "^5.2.2",
-    "ssb-client": "^4.9.0"
+    "prettier": "^3.9.10",
+    "ssb-client": "^4.9.0",
+    "tape": "^5.2.2"
   },
   "dependencies": {
+    "@happy0/flumeview-level-custom": "^2.0.2",
     "pull-many": "^1.0.9",
     "pull-scan": "^1.0.0",
     "pull-stream": "^3.6.14"
