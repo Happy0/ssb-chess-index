@@ -3,6 +3,8 @@ const {
   FlumeViewLevelCustom,
 } = require("@happy0/flumeview-level-custom");
 
+const { chessGameDbKey } = require('./keys');
+
 function isChessGameLifecycleMessage(msg) {
   return isChessInvite(msg) || isChessInviteAcceptance(msg) || isGameEnd(msg);
 }
@@ -17,10 +19,6 @@ function isChessInviteAcceptance(msg) {
 
 function isGameEnd(msg) {
   return msg.value.content.type === "chess_game_end";
-}
-
-function chessGameDbKey(gameId) {
-  return `/game/${gameId}`;
 }
 
 async function getChessGameEntry(gameId) {
