@@ -6,6 +6,13 @@ function playerPendingChallengeSentKey(gameId, authorId, date) {
   return `/invites/${authorId}/outbound/date/${date}/${gameId}`;
 }
 
+function allPlayerPendingChallengeSentKeyRange(authorId) {
+  return {
+    gt: `/invites/${authorId}/outbound/date/`,
+    lt: `/invites/${authorId}/outbound/date/\uffff`,
+  };
+}
+
 function playerPendingChallengeReceivedKey(authorId, gameId, date) {
   return `/invites/${authorId}/inbound/date/${date}/${gameId}`;
 }
@@ -37,13 +44,6 @@ function allPlayerFinishedGamesKeyRange(authorId) {
   return {
     gt: `/games/finished/${authorId}/`,
     lt: `/games/finished/${authorId}/\uffff`,
-  };
-}
-
-function allPlayerPendingChallengeSentKeyRange(authorId) {
-  return {
-    gt: `/invites/${authorId}/outbound/date/`,
-    lt: `/invites/${authorId}/outbound/date/\uffff`,
   };
 }
 

@@ -144,8 +144,8 @@ function createGameEndedBatchEntries(gameId, inviter, invited, date) {
 }
 
 async function processInvite(db, gameId, msg) {
-  const inviter = msg.value.content.inviting;
-  const invited = msg.value.content.invited;
+  const inviter = msg.value.author;
+  const invited = msg.value.content.inviting;
 
   if (!inviter || !invited) {
     return [];
@@ -156,7 +156,7 @@ async function processInvite(db, gameId, msg) {
     gameAlreadyEnded(db, inviter, invited, gameId),
   ]);
 
-  if (!existingAcceptance) {
+  if (!alreadyAccepted) {
     return [
       ...createInviteBatchEntries(
         gameId,
