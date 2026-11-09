@@ -227,7 +227,7 @@ async function runTest(inputMessages, expectedAtStage) {
   expect(allGamesFinishedInviter.length).toStrictEqual(
     expectedAtStage.gamesEnded ? 1 : 0,
   );
-  expect(allGamesInProgressInviter[0]?.value).toStrictEqual(
+  expect(allGamesFinishedInviter[0]?.value).toStrictEqual(
     expectedAtStage.gamesEnded ? gameId : undefined,
   );
 
@@ -253,7 +253,7 @@ async function testScenario(scenario) {
   await runTest([messages[0], messages[1]], scenario.stateAfterSecond);
 
   await runTest(
-    [messages[0], messages[1].messages[2]],
+    [messages[0], messages[1],messages[2]],
     scenario.stateAfterThird,
   );
 }

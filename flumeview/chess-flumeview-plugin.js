@@ -325,7 +325,7 @@ async function chessMessageMapper(db, msg) {
   } else if (isChessInviteAcceptance(msg)) {
     return processInviteAcceptance(db, gameId, msg);
   } else if (isGameEnd(msg)) {
-    return processGameEnd(gameId, msg);
+    return processGameEnd(db, gameId, msg);
   } else if (!msg.sync) {
     console.warn(
       `Message unexpectedly got past game message filter: ${JSON.stringify(msg)}`,
