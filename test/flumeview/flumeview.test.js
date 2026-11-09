@@ -27,18 +27,18 @@ const happyPathScenario = {
     inboundInvites: true,
     outboundInvites: true,
     gamesInProgress: false,
-    gamesEnded: 0,
+    gamesEnded: false,
   },
   stateAfterSecond: {
-    inboundInvites: 0,
-    outboundInvites: 0,
+    inboundInvites: false,
+    outboundInvites: false,
     gamesInProgress: true,
-    gamesEnded: 0,
+    gamesEnded: false,
   },
   stateAfterThird: {
-    inboundInvites: 0,
-    outboundInvites: 0,
-    gamesInProgress: 0,
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
     gamesEnded: true,
   },
 };
@@ -225,10 +225,10 @@ async function runTest(inputMessages, expectedAtStage) {
     allPlayerFinishedGamesKeyRange(inviterAuthor),
   );
   expect(allGamesFinishedInviter.length).toStrictEqual(
-    expectedAtStage.gamesInProgress ? 1 : 0,
+    expectedAtStage.gamesEnded ? 1 : 0,
   );
   expect(allGamesInProgressInviter[0]?.value).toStrictEqual(
-    expectedAtStage.gamesInProgress ? gameId : undefined,
+    expectedAtStage.gamesEnded ? gameId : undefined,
   );
 
   const allGamesFinishedInvited = await getAllItems(
@@ -236,10 +236,10 @@ async function runTest(inputMessages, expectedAtStage) {
     allPlayerFinishedGamesKeyRange(invitedAuthor),
   );
   expect(allGamesFinishedInvited.length).toStrictEqual(
-    expectedAtStage.gamesInProgress ? 1 : 0,
+    expectedAtStage.gamesEnded ? 1 : 0,
   );
   expect(allGamesFinishedInvited[0]?.value).toStrictEqual(
-    expectedAtStage.gamesInProgress ? gameId : undefined,
+    expectedAtStage.gamesEnded ? gameId : undefined,
   );
 
   dbWithPlugin.close(() => {});
