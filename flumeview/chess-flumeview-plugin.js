@@ -10,6 +10,7 @@ const {
   playerGameAcceptanceTrackingKey,
   playerGameEndTrackingKey,
   playerGameEndKey,
+  playerGameInProgressKey
 } = require("./keys");
 
 function isChessGameLifecycleMessage(msg) {
@@ -45,6 +46,7 @@ function createInviteBatchEntries(
   gameId,
   invitingPlayer,
   invitedPlayer,
+  timestamp,
   messageType,
 ) {
   const type = messageType || "put";
@@ -55,7 +57,7 @@ function createInviteBatchEntries(
       key: playerPendingChallengeSentKey(
         gameId,
         invitingPlayer,
-        msg.value.timestamp,
+        timestamp,
       ),
       value: gameId,
     },
@@ -64,7 +66,7 @@ function createInviteBatchEntries(
       key: playerPendingChallengeReceivedKey(
         gameId,
         invitedPlayer,
-        msg.value.timestamp,
+        timestamp,
       ),
       value: gameId,
     },
@@ -113,17 +115,17 @@ function createGameFinishedBatchEntries(
   ];
 }
 
-async function gameInviteAlreadyAccepted(db, invited, gameId) {
+async function getInviteAcceptionAssertion(db, invited, gameId) {
   const existingAcceptanceKey = playerGameAcceptanceTrackingKey(
     invited,
     gameId,
   );
   const existingAcceptance = await db.get(existingAcceptanceKey);
 
-  return existingAcceptance != undefined;
+  return existingAcceptance;
 }
 
-async function gameAlreadyEnded(db, inviter, invited, gameId) {
+async function getGameEndAssertion(db, inviter, invited, gameId) {
   const inviterEndKey = playerGameEndTrackingKey(inviter, gameId);
   const invitedEndKey = playerGameEndTrackingKey(invited, gameId);
 
@@ -132,14 +134,14 @@ async function gameAlreadyEnded(db, inviter, invited, gameId) {
     db.get(invitedEndKey),
   ]);
 
-  return invitedEndAssertion != null || inviterEndAssertion != null;
+  return invitedEndAssertion || inviterEndAssertion;
 }
 
-function createGameEndedBatchEntries(gameId, inviter, invited, date) {
+function createGameEndedBatchEntries(gameId, inviter, invited, finishedTimestamp, createdTimestamp) {
   return [
     ...createGameInProgressBatchEntries(gameId, inviter, inviter, "del"),
-    ...createInviteBatchEntries(gameId, inviter, invited, "del"),
-    ...createGameFinishedBatchEntries(gameId, inviter, invited, date),
+    ...createInviteBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
+    ...createGameFinishedBatchEntries(gameId, inviter, invited, finishedTimestamp),
   ];
 }
 
@@ -151,30 +153,32 @@ async function processInvite(db, gameId, msg) {
     return [];
   }
 
-  const [alreadyAccepted, gameAlreadyFinished] = await Promise.all([
-    gameInviteAlreadyAccepted(db, invited, gameId),
-    gameAlreadyEnded(db, inviter, invited, gameId),
+  const [inviteAcceptedAssertion, gameFinishedAssertion] = await Promise.all([
+    getInviteAcceptionAssertion(db, invited, gameId),
+    getGameEndAssertion(db, inviter, invited, gameId),
   ]);
 
-  if (!alreadyAccepted) {
+  if (!inviteAcceptedAssertion && !gameFinishedAssertion) {
     return [
       ...createInviteBatchEntries(
         gameId,
-        msg.value.author,
-        msg.value.content.inviting,
+        inviter,
+        invited,
+        msg.value.timestamp,
       ),
       {
         type: "put",
-        key: gameId,
+        key: chessGameDbKey(gameId),
         value: {
           gameId: gameId,
           status: "invited",
           inviter: msg.value.author,
           invited: msg.value.content.inviting,
+          createdAt: msg.value.timestamp
         },
       },
     ];
-  } else if (alreadyAccepted === true && gameAlreadyEnded === false) {
+  } else if (inviteAcceptedAssertion === true && getGameEndAssertion === false) {
     return [
       ...createGameInProgressBatchEntries(
         gameId,
@@ -185,6 +189,7 @@ async function processInvite(db, gameId, msg) {
         gameId,
         msg.value.author,
         msg.value.content.inviting,
+        inviteAcceptedAssertion.timestamp,
         "del",
       ),
       // Add the missing player info
@@ -192,20 +197,21 @@ async function processInvite(db, gameId, msg) {
         type: "put",
         key: gameId,
         value: {
-          gameId: gameId,
+          gameId: chessGameDbKey(gameId),
           status: "in_progress",
           inviter: msg.value.author,
           invited: msg.value.content.inviting,
+          createdAt: msg.value.timestamp
         },
       },
     ];
-  } else if (gameAlreadyFinished) {
+  } else if (gameFinishedAssertion) {
     return [
       ...createGameEndedBatchEntries(
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
-        gameAlreadyFinished.finishedAt,
+        gameFinishedAssertion.finishedAt,
       ),
       {
         type: "put",
@@ -231,7 +237,7 @@ async function processInviteAcceptance(db, gameId, msg) {
         type: "put",
         value: {
           assertedBy: msg.value.author,
-          status: "in_progress",
+          timestamp: msg.value.timestamp
         },
         key: playerGameAcceptanceTrackingKey(msg.value.author, gameId),
       },
@@ -257,6 +263,8 @@ async function processInviteAcceptance(db, gameId, msg) {
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
+        existingGameEntry.createdAt,
+        'del'
       ),
     ];
   } else {
@@ -286,6 +294,7 @@ async function processGameEnd(db, gameId, msg) {
     const gameUpdate = {
       type: "put",
       key: chessGameDbKey(gameId),
+      timestamp: msg.value.timestamp,
       value: { ...existingGameEntry, status: "finished" },
     };
 

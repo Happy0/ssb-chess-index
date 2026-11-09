@@ -178,16 +178,16 @@ async function runTest(inputMessages, expectedAtStage) {
   expect(allInvitesSent.length).toStrictEqual(
     expectedAtStage.outboundInvites ? 1 : 0,
   );
-  expect(allInvitesSent[0]).toStrictEqual(
+  expect(allInvitesSent[0]?.value).toStrictEqual(
     expectedAtStage.outboundInvites ? gameId : undefined,
   );
 
   const allInvitesReceived = await getAllItems(
-    dbWithPlugin,
+    flumePlugin,
     allPlayerPendingChallengeReceivedKeyRange(invitedAuthor),
   );
 
-  expect(allInvitesReceived).toStrictEqual(
+  expect(allInvitesReceived.length).toStrictEqual(
     expectedAtStage.inboundInvites.length ? 1 : 0,
   );
   expect(allInvitesReceived[0]).toStrictEqual(
@@ -197,49 +197,49 @@ async function runTest(inputMessages, expectedAtStage) {
   // Games in progress, inviter and invited
 
   const allGamesInProgressInviter = await getAllItems(
-    dbWithPlugin,
+    flumePlugin,
     allPlayerGamesInProgressKeyRange(inviterAuthor),
   );
   expect(allGamesInProgressInviter.length).toStrictEqual(
     expectedAtStage.gamesInProgress ? 1 : 0,
   );
-  expect(allGamesInProgressInviter[0]).toStrictEqual(
-    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  expect(allGamesInProgressInviter[0]?.value).toStrictEqual(
+    expectedAtStage.gamesInProgress ? gameId : undefined,
   );
 
   const allGamesInProgressInvited = await getAllItems(
-    dbWithPlugin,
+    flumePlugin,
     allPlayerGamesInProgressKeyRange(invitedAuthor),
   );
   expect(allGamesInProgressInvited.length).toStrictEqual(
     expectedAtStage.gamesInProgress ? 1 : 0,
   );
-  expect(allGamesInProgressInvited[0]).toStrictEqual(
-    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  expect(allGamesInProgressInvited[0]?.value).toStrictEqual(
+    expectedAtStage.gamesInProgress ? gameId : undefined,
   );
 
   // Games finished, inviter and invited
 
   const allGamesFinishedInviter = await getAllItems(
-    dbWithPlugin,
+    flumePlugin,
     allPlayerFinishedGamesKeyRange(inviterAuthor),
   );
   expect(allGamesFinishedInviter.length).toStrictEqual(
     expectedAtStage.gamesInProgress ? 1 : 0,
   );
-  expect(allGamesInProgressInviter[0]).toStrictEqual(
-    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  expect(allGamesInProgressInviter[0]?.value).toStrictEqual(
+    expectedAtStage.gamesInProgress ? gameId : undefined,
   );
 
   const allGamesFinishedInvited = await getAllItems(
-    dbWithPlugin,
+    flumePlugin,
     allPlayerFinishedGamesKeyRange(invitedAuthor),
   );
   expect(allGamesFinishedInvited.length).toStrictEqual(
     expectedAtStage.gamesInProgress ? 1 : 0,
   );
-  expect(allGamesFinishedInvited[0]).toStrictEqual(
-    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  expect(allGamesFinishedInvited[0]?.value).toStrictEqual(
+    expectedAtStage.gamesInProgress ? gameId : undefined,
   );
 
   dbWithPlugin.close(() => {});
