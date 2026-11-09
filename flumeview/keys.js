@@ -12,6 +12,14 @@ function playerGameAcceptanceTrackingKey(authorId, gameId) {}
 
 function playerGameEndTrackingKey(authorId, gameId) {}
 
+function allPlayerPendingChallengeSentKeyRange(authorId) {}
+
+function allPlayerPendingChallengeReceivedKeyRange(authorId) {}
+
+function allPlayerGamesInProgressKeyRange(authorId) {}
+
+function allPlayerFinishedGamesKeyRange(authorId) {}
+
 module.exports = {
   chessGameDbKey,
   playerPendingChallengeSentKey,
@@ -19,4 +27,8 @@ module.exports = {
   playerGameInProgressKey,
   playerGameAcceptanceTrackingKey,
   playerGameEndTrackingKey,
+  allPlayerPendingChallengeSentKeyRange,
+  allPlayerPendingChallengeReceivedKeyRange,
+  allPlayerGamesInProgressKeyRange,
+  allPlayerFinishedGamesKeyRange,
 };

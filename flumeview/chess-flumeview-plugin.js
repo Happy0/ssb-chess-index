@@ -125,7 +125,7 @@ async function processInvite(db, gameId, msg) {
 
   const [alreadyAccepted, gameAlreadyFinished] = await Promise.all([
     gameInviteAlreadyAccepted(db, invited, gameId),
-    gameAlreadyEnded(db, inviter, invited, gameId)
+    gameAlreadyEnded(db, inviter, invited, gameId),
   ]);
 
   if (!existingAcceptance) {
