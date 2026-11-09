@@ -10,9 +10,13 @@
   "author": "Gordon Martin",
   "license": "MIT",
   "devDependencies": {
+    "flumecodec": "^0.0.1",
+    "flumedb": "^2.1.8",
+    "flumelog-offset": "^3.4.4",
     "prettier": "^3.9.10",
     "ssb-client": "^4.9.0",
-    "tape": "^5.2.2"
+    "tape": "^5.2.2",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@happy0/flumeview-level-custom": "^2.0.2",

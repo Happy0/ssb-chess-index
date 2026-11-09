@@ -10,6 +10,8 @@ const Flume = require("flumedb");
 const Log = require("flumelog-offset");
 const codec = require("flumecodec");
 
+const pull = require("pull-stream");
+
 const possibleArrivalOrders = [
   ["chess_invite", "chess_game_end", "chess_invite_accept"],
   ["chess_invite_accept", "chess_invite", "chess_game_end"],
@@ -41,8 +43,6 @@ const happyPathScenario = {
   },
 };
 
-const testScenarios = [happyPathScenario];
-
 async function setupFlumeDbLog(items) {
   const randomFileName = crypto.randomUUID();
 
@@ -65,15 +65,26 @@ async function setupFlumeDbLog(items) {
   });
 }
 
-function attachPlugin(db) {
-  const randomFileName = crypto.randomUUID();
-  return db.use(
-    `flume-plugin-${randomFileName}`,
-    ChessFlumeviewLevelCustomPlugin,
-  );
+function attachPlugin(db, pluginName) {
+  return db.use(pluginName, ChessFlumeviewLevelCustomPlugin);
 }
 
-async function getAllItems(db, range) {}
+async function getAllItems(flumePlugin, range) {
+  const stream = flumePlugin.read(range);
+
+  return new Promise((resolve, reject) => {
+    pull(
+      stream,
+      pull.collect((err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      }),
+    );
+  });
+}
 
 const inviterAuthor = "@RJ09Kfs3neEZPrbpbWVDxkN92x9moe3aPusOMOc4S2I=.ed25519";
 const invitedAuthor = "@STgkEO48Kucd57i7x0vBqfkz/euvt2XdglwF6gZLtdk=.ed25519";
@@ -148,109 +159,109 @@ const gameEndMessage = {
 const typeMessageMappings = {
   chess_invite: inviteMessage,
   chess_invite_accept: inviteAcceptMessage,
-  "chess_game-end": gameEndMessage,
+  chess_game_end: gameEndMessage,
 };
 
-describe("Chess lifecycle message order arrival scenarios", () => {
-  test.each(testScenarios, "$scenarioDescription ", async (scenario) => {
-    async function runTest(inputMessages, expectedAtStage) {
-      const db = await setupFlumeDbLog(inputMessages);
-      const dbWithPlugin = attachPlugin(db);
+async function runTest(inputMessages, expectedAtStage) {
+  const db = await setupFlumeDbLog(inputMessages);
 
-      const allInvitesSent = await getAllItems(
-        dbWithPlugin,
-        allPlayerPendingChallengeSentKeyRange(inviterAuthor),
-      );
+  const pluginName = crypto.randomUUID();
+  const dbWithPlugin = attachPlugin(db, pluginName);
 
-      expect(allInvitesSent.length).toStrictEqual(
-        expectedAtStage.outboundInvites ? 1 : 0,
-      );
-      expect(allInvitesSent[0]).toStrictEqual(
-        expectedAtStage.outboundInvites ? gameId : undefined,
-      );
+  const flumePlugin = db[pluginName];
 
-      const allInvitesReceived = await getAllItems(
-        dbWithPlugin,
-        allPlayerPendingChallengeReceivedKeyRange(invitedAuthor),
-      );
+  const allInvitesSent = await getAllItems(
+    flumePlugin,
+    allPlayerPendingChallengeSentKeyRange(inviterAuthor),
+  );
 
-      expect(allInvitesReceived).toStrictEqual(
-        expectedAtStage.inboundInvites.length ? 1 : 0,
-      );
-      expect(allInvitesReceived[0]).toStrictEqual(
-        expectedAtStage.inboundInvites[0] ? gameId : undefined,
-      );
+  expect(allInvitesSent.length).toStrictEqual(
+    expectedAtStage.outboundInvites ? 1 : 0,
+  );
+  expect(allInvitesSent[0]).toStrictEqual(
+    expectedAtStage.outboundInvites ? gameId : undefined,
+  );
 
-      // Games in progress, inviter and invited
+  const allInvitesReceived = await getAllItems(
+    dbWithPlugin,
+    allPlayerPendingChallengeReceivedKeyRange(invitedAuthor),
+  );
 
-      const allGamesInProgressInviter = await getAllItems(
-        dbWithPlugin,
-        allPlayerGamesInProgressKeyRange(inviterAuthor),
-      );
-      expect(allGamesInProgressInviter.length).toStrictEqual(
-        expectedAtStage.gamesInProgress ? 1 : 0,
-      );
-      expect(allGamesInProgressInviter[0]).toStrictEqual(
-        expectedAtStage.gamesInProgress ? [gameId] : undefined,
-      );
+  expect(allInvitesReceived).toStrictEqual(
+    expectedAtStage.inboundInvites.length ? 1 : 0,
+  );
+  expect(allInvitesReceived[0]).toStrictEqual(
+    expectedAtStage.inboundInvites[0] ? gameId : undefined,
+  );
 
-      const allGamesInProgressInvited = await getAllItems(
-        dbWithPlugin,
-        allPlayerGamesInProgressKeyRange(invitedAuthor),
-      );
-      expect(allGamesInProgressInvited.length).toStrictEqual(
-        expectedAtStage.gamesInProgress ? 1 : 0,
-      );
-      expect(allGamesInProgressInvited[0]).toStrictEqual(
-        expectedAtStage.gamesInProgress ? [gameId] : undefined,
-      );
+  // Games in progress, inviter and invited
 
-      // Games finished, inviter and invited
+  const allGamesInProgressInviter = await getAllItems(
+    dbWithPlugin,
+    allPlayerGamesInProgressKeyRange(inviterAuthor),
+  );
+  expect(allGamesInProgressInviter.length).toStrictEqual(
+    expectedAtStage.gamesInProgress ? 1 : 0,
+  );
+  expect(allGamesInProgressInviter[0]).toStrictEqual(
+    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  );
 
-      const allGamesFinishedInviter = await getAllItems(
-        dbWithPlugin,
-        allPlayerFinishedGamesKeyRange(inviterAuthor),
-      );
-      expect(allGamesFinishedInviter.length).toStrictEqual(
-        expectedAtStage.gamesInProgress ? 1 : 0,
-      );
-      expect(allGamesInProgressInviter[0]).toStrictEqual(
-        expectedAtStage.gamesInProgress ? [gameId] : undefined,
-      );
+  const allGamesInProgressInvited = await getAllItems(
+    dbWithPlugin,
+    allPlayerGamesInProgressKeyRange(invitedAuthor),
+  );
+  expect(allGamesInProgressInvited.length).toStrictEqual(
+    expectedAtStage.gamesInProgress ? 1 : 0,
+  );
+  expect(allGamesInProgressInvited[0]).toStrictEqual(
+    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  );
 
-      const allGamesFinishedInvited = await getAllItems(
-        dbWithPlugin,
-        allPlayerFinishedGamesKeyRange(invitedAuthor),
-      );
-      expect(allGamesFinishedInvited.length).toStrictEqual(
-        expectedAtStage.gamesInProgress ? 1 : 0,
-      );
-      expect(allGamesFinishedInvited[0]).toStrictEqual(
-        expectedAtStage.gamesInProgress ? [gameId] : undefined,
-      );
+  // Games finished, inviter and invited
 
-      dbWithPlugin.close(() => {});
-    }
+  const allGamesFinishedInviter = await getAllItems(
+    dbWithPlugin,
+    allPlayerFinishedGamesKeyRange(inviterAuthor),
+  );
+  expect(allGamesFinishedInviter.length).toStrictEqual(
+    expectedAtStage.gamesInProgress ? 1 : 0,
+  );
+  expect(allGamesInProgressInviter[0]).toStrictEqual(
+    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  );
 
-    test("after message 1", async () => {
-      await runTest([scenario.arrivalOrder[0]], scenario.stateAfterFirst);
-    });
+  const allGamesFinishedInvited = await getAllItems(
+    dbWithPlugin,
+    allPlayerFinishedGamesKeyRange(invitedAuthor),
+  );
+  expect(allGamesFinishedInvited.length).toStrictEqual(
+    expectedAtStage.gamesInProgress ? 1 : 0,
+  );
+  expect(allGamesFinishedInvited[0]).toStrictEqual(
+    expectedAtStage.gamesInProgress ? [gameId] : undefined,
+  );
 
-    test("after message 2", async () => {
-      await runTest(
-        [scenario.arrivalOrder[0], scenario.arrivalOrder[1]],
-        scenario.stateAfterSecond,
-      );
-    });
+  dbWithPlugin.close(() => {});
+}
 
-    test("after message 3", async () => {
-      await runTest(
-        [
-          scenario.arrivalOrder[0],
-          scenario.arrivalOrder[1].scenario.arrivalOrder[2],
-        ],
-        scenario.stateAfterThird,
-      );
-    });
+async function testScenario(scenario) {
+  const messages = scenario.arrivalOrder.map((x) => typeMessageMappings[x]);
+
+  await runTest([messages[0]], scenario.stateAfterFirst);
+
+  await runTest([messages[0], messages[1]], scenario.stateAfterSecond);
+
+  await runTest(
+    [messages[0], messages[1].messages[2]],
+    scenario.stateAfterThird,
+  );
+}
+
+describe("Chess lifecycle message order arrival scenarios", async () => {
+  test("Happy path", async () => {
+    await testScenario(happyPathScenario);
   });
+
+  // TODO: scenario where the 'invited' ends the game
 });

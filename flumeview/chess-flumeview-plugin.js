@@ -9,6 +9,7 @@ const {
   playerPendingChallengeReceivedKey,
   playerGameAcceptanceTrackingKey,
   playerGameEndTrackingKey,
+  playerGameEndKey,
 } = require("./keys");
 
 function isChessGameLifecycleMessage(msg) {
@@ -40,8 +41,13 @@ function getGameId(msg) {
   }
 }
 
-function createInviteBatchEntries(gameId, invitingPlayer, invitedPlayer, type) {
-  const type = type || "put";
+function createInviteBatchEntries(
+  gameId,
+  invitingPlayer,
+  invitedPlayer,
+  messageType,
+) {
+  const type = messageType || "put";
 
   return [
     {
@@ -69,9 +75,9 @@ function createGameInProgressBatchEntries(
   gameId,
   invitingPlayer,
   invitedPlayer,
-  type,
+  messageType,
 ) {
-  const type = type || "put";
+  const type = messageType || "put";
 
   return [
     {
@@ -91,7 +97,21 @@ function createGameFinishedBatchEntries(
   gameId,
   invitingPlayer,
   invitedPlayer,
-) {}
+  date,
+) {
+  return [
+    {
+      type: "put",
+      key: playerGameEndKey(invitingPlayer, date, gameId),
+      value: gameId,
+    },
+    {
+      type: "put",
+      key: playerGameEndKey(invitedPlayer, date, gameId),
+      value: gameId,
+    },
+  ];
+}
 
 async function gameInviteAlreadyAccepted(db, invited, gameId) {
   const existingAcceptanceKey = playerGameAcceptanceTrackingKey(
@@ -104,14 +124,22 @@ async function gameInviteAlreadyAccepted(db, invited, gameId) {
 }
 
 async function gameAlreadyEnded(db, inviter, invited, gameId) {
-  // TODO: aye or naw
+  const inviterEndKey = playerGameEndTrackingKey(inviter, gameId);
+  const invitedEndKey = playerGameEndTrackingKey(invited, gameId);
+
+  const [inviterEndAssertion, invitedEndAssertion] = await Promise.all([
+    db.get(inviterEndKey),
+    db.get(invitedEndKey),
+  ]);
+
+  return invitedEndAssertion != null || inviterEndAssertion != null;
 }
 
-function createGameEndedBatchEntries(gameId, inviter, invited) {
+function createGameEndedBatchEntries(gameId, inviter, invited, date) {
   return [
     ...createGameInProgressBatchEntries(gameId, inviter, inviter, "del"),
     ...createInviteBatchEntries(gameId, inviter, invited, "del"),
-    ...createGameFinishedBatchEntries(gameId, inviter, invited),
+    ...createGameFinishedBatchEntries(gameId, inviter, invited, date),
   ];
 }
 
@@ -177,6 +205,7 @@ async function processInvite(db, gameId, msg) {
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
+        gameAlreadyFinished.finishedAt,
       ),
       {
         type: "put",
@@ -245,6 +274,7 @@ async function processGameEnd(db, gameId, msg) {
         value: {
           assertedBy: msg.value.author,
           status: "finished",
+          finishedAt: msg.value.timestamp,
         },
         key: playerGameEndTrackingKey(msg.value.author, gameId),
       },
@@ -264,6 +294,7 @@ async function processGameEnd(db, gameId, msg) {
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
+        msg.value.timestamp,
       ),
       gameUpdate,
     ];
