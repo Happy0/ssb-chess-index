@@ -11,7 +11,7 @@ const {
   playerGameEndTrackingKey,
   playerGameEndKey,
   playerGameInProgressKey,
-  observableGameKey
+  observableGameKey,
 } = require("./keys");
 
 function isChessGameLifecycleMessage(msg) {
@@ -55,20 +55,12 @@ function createInviteBatchEntries(
   return [
     {
       type: type,
-      key: playerPendingChallengeSentKey(
-        gameId,
-        invitingPlayer,
-        timestamp,
-      ),
+      key: playerPendingChallengeSentKey(gameId, invitingPlayer, timestamp),
       value: gameId,
     },
     {
       type: type,
-      key: playerPendingChallengeReceivedKey(
-        gameId,
-        invitedPlayer,
-        timestamp,
-      ),
+      key: playerPendingChallengeReceivedKey(gameId, invitedPlayer, timestamp),
       value: gameId,
     },
   ];
@@ -97,8 +89,8 @@ function createGameInProgressBatchEntries(
     {
       type: type,
       key: observableGameKey(invitedPlayer, invitingPlayer, gameId, createdAt),
-      value: gameId
-    }
+      value: gameId,
+    },
   ];
 }
 
@@ -144,11 +136,34 @@ async function getGameEndAssertion(db, inviter, invited, gameId) {
   return invitedEndAssertion || inviterEndAssertion;
 }
 
-function createGameEndedBatchEntries(gameId, inviter, invited, finishedTimestamp, createdTimestamp) {
+function createGameEndedBatchEntries(
+  gameId,
+  inviter,
+  invited,
+  finishedTimestamp,
+  createdTimestamp,
+) {
   return [
-    ...createGameInProgressBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
-    ...createInviteBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
-    ...createGameFinishedBatchEntries(gameId, inviter, invited, finishedTimestamp),
+    ...createGameInProgressBatchEntries(
+      gameId,
+      inviter,
+      invited,
+      createdTimestamp,
+      "del",
+    ),
+    ...createInviteBatchEntries(
+      gameId,
+      inviter,
+      invited,
+      createdTimestamp,
+      "del",
+    ),
+    ...createGameFinishedBatchEntries(
+      gameId,
+      inviter,
+      invited,
+      finishedTimestamp,
+    ),
   ];
 }
 
@@ -181,7 +196,7 @@ async function processInvite(db, gameId, msg) {
           status: "invited",
           inviter: msg.value.author,
           invited: msg.value.content.inviting,
-          createdAt: msg.value.timestamp
+          createdAt: msg.value.timestamp,
         },
       },
     ];
@@ -191,7 +206,7 @@ async function processInvite(db, gameId, msg) {
         gameId,
         msg.value.author,
         msg.value.content.inviting,
-        msg.value.timestamp
+        msg.value.timestamp,
       ),
       ...createInviteBatchEntries(
         gameId,
@@ -209,7 +224,7 @@ async function processInvite(db, gameId, msg) {
           status: "in_progress",
           inviter: msg.value.author,
           invited: msg.value.content.inviting,
-          createdAt: msg.value.timestamp
+          createdAt: msg.value.timestamp,
         },
       },
     ];
@@ -245,7 +260,7 @@ async function processInviteAcceptance(db, gameId, msg) {
         type: "put",
         value: {
           assertedBy: msg.value.author,
-          timestamp: msg.value.timestamp
+          timestamp: msg.value.timestamp,
         },
         key: playerGameAcceptanceTrackingKey(msg.value.author, gameId),
       },
@@ -266,14 +281,14 @@ async function processInviteAcceptance(db, gameId, msg) {
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
-        existingGameEntry.createdAt
+        existingGameEntry.createdAt,
       ),
       ...createInviteBatchEntries(
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
         existingGameEntry.createdAt,
-        'del'
+        "del",
       ),
     ];
   } else {
@@ -313,7 +328,7 @@ async function processGameEnd(db, gameId, msg) {
         existingGameEntry.inviter,
         existingGameEntry.invited,
         msg.value.timestamp,
-        existingGameEntry.createdAt
+        existingGameEntry.createdAt,
       ),
       gameUpdate,
     ];

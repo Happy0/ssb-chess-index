@@ -22,7 +22,7 @@ function playerGameInProgressKey(player, otherPlayer, gameId) {
 }
 
 function observableGameKey(player, otherPlayer, gameId, date) {
-    return `/games/observe/${date}/${player}/${otherPlayer}/${gameId}`;
+  return `/games/observe/${date}/${player}/${otherPlayer}/${gameId}`;
 }
 
 function allObservableGamesKeyRange() {
@@ -32,7 +32,6 @@ function allObservableGamesKeyRange() {
   };
 }
 
-
 function allPlayerGamesInProgressKeyRange(authorId) {
   return {
     gt: `/games/live/${authorId}/`,
@@ -41,7 +40,7 @@ function allPlayerGamesInProgressKeyRange(authorId) {
 }
 
 function allGamesInProgressKeyRange() {
-    return {
+  return {
     gt: `/games/live`,
     lt: `/games/live/\uffff`,
   };
@@ -53,7 +52,6 @@ function allGamesKeyRange() {
     lt: `/games/\uffff`,
   };
 }
-
 
 function playerGameAcceptanceTrackingKey(authorId, gameId) {
   return `/games/${gameId}/invited_accepted_assertion/${authorId}`;
@@ -96,5 +94,5 @@ module.exports = {
   allGamesInProgressKeyRange,
   allGamesKeyRange,
   observableGameKey,
-  allObservableGamesKeyRange
+  allObservableGamesKeyRange,
 };

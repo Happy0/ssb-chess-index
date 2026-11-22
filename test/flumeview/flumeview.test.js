@@ -13,11 +13,11 @@ const codec = require("flumecodec");
 const pull = require("pull-stream");
 
 const possibleArrivalOrders = [
- // ["chess_invite", "chess_invite_accept", "chess_game_end"],
- // ["chess_invite_accept", "chess_invite", "chess_game_end"],
- // ["chess_invite", "chess_game_end", "chess_invite_accept"],
-//  ["chess_invite_accept", "chess_game_end", "chess_invite"],
-//  ["chess_game_end", "chess_invite", "chess_invite_accept"],
+  // ["chess_invite", "chess_invite_accept", "chess_game_end"],
+  // ["chess_invite_accept", "chess_invite", "chess_game_end"],
+  // ["chess_invite", "chess_game_end", "chess_invite_accept"],
+  //  ["chess_invite_accept", "chess_game_end", "chess_invite"],
+  //  ["chess_game_end", "chess_invite", "chess_invite_accept"],
   ["chess_game_end", "chess_invite_accept", "chess_invite"],
 ];
 
@@ -157,9 +157,7 @@ const endAcceptanceInviteOrder = {
     gamesInProgress: false,
     gamesEnded: true,
   },
-}
-
-
+};
 
 async function setupFlumeDbLog(items) {
   const randomFileName = crypto.randomUUID();
@@ -371,7 +369,7 @@ async function testScenario(scenario) {
   await runTest([messages[0], messages[1]], scenario.stateAfterSecond);
 
   await runTest(
-    [messages[0], messages[1],messages[2]],
+    [messages[0], messages[1], messages[2]],
     scenario.stateAfterThird,
   );
 }
@@ -383,21 +381,21 @@ describe("Chess lifecycle message order arrival scenarios", async () => {
 
   test("Invite, game end, invite acceptance receival order", async () => {
     await testScenario(inviteGameEndAcceptanceOrder);
-  })
+  });
 
   test("Invite acceptance arrives before invite path", async () => {
     await testScenario(inviteAcceptArrivesBeforeInvitePath);
-  })
+  });
 
   test("Accept, end, invite receival order", async () => {
-    await testScenario(acceptEndInviteOrder)
-  })
+    await testScenario(acceptEndInviteOrder);
+  });
 
   test("End, invite, accept order", async () => {
     await testScenario(endInviteAcceptanceOrder);
-  })
+  });
 
   test("End, accept, invite order", async () => {
-    await testScenario(endAcceptanceInviteOrder)
-  })
+    await testScenario(endAcceptanceInviteOrder);
+  });
 });

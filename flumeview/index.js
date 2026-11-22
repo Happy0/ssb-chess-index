@@ -1,53 +1,62 @@
-const { chessGameDbKey, allObservableGamesKeyRange, allPlayerPendingChallengeSentKeyRange, allPlayerPendingChallengeReceivedKeyRange, allPlayerGamesInProgressKeyRange, allPlayerFinishedGamesKeyRange } = require('./keys');
+const {
+  chessGameDbKey,
+  allObservableGamesKeyRange,
+  allPlayerPendingChallengeSentKeyRange,
+  allPlayerPendingChallengeReceivedKeyRange,
+  allPlayerGamesInProgressKeyRange,
+  allPlayerFinishedGamesKeyRange,
+} = require("./keys");
 const scan = require("pull-scan");
-const pull = require('pull-stream');
+const pull = require("pull-stream");
 
 module.exports = function (flumeLevelCustom) {
-
   function accumulateIntoChangeIdsArraySource(source) {
     return pull(
       source,
-      scan((acc, update) => {
+      scan(
+        (acc, update) => {
           if (update.sync) {
             acc.sync = true;
             return acc;
-          } else if (update.type === 'put') {
+          } else if (update.type === "put") {
             acc.items[update.key] = update.value;
             return acc;
-          } else if (update.type === 'del') {
+          } else if (update.type === "del") {
             delete acc.items[update.key];
             return acc;
           } else {
             return acc;
           }
-        }, {arr: [], sync: false}),
-      pull.filter(acc => acc.sync === true),
-      pull.map(acc => Object.values(acc.items))
-    )
-  };
+        },
+        { arr: [], sync: false },
+      ),
+      pull.filter((acc) => acc.sync === true),
+      pull.map((acc) => Object.values(acc.items)),
+    );
+  }
 
   function pendingChallengesSent(playerId) {
     const source = flumeLevelCustom.read({
       ...allPlayerPendingChallengeSentKeyRange(playerId),
-      live: true
+      live: true,
     });
 
     return accumulateIntoChangeIdsArraySource(source);
-  };
+  }
 
   function pendingChallengesReceived(playerId) {
     const source = flumeLevelCustom.read({
       ...allPlayerPendingChallengeReceivedKeyRange(playerId),
-      live: true
+      live: true,
     });
 
     return accumulateIntoChangeIdsArraySource(source);
-  };
+  }
 
   function getGamesInProgressIds(playerId) {
     const source = flumeLevelCustom.read({
       ...allPlayerGamesInProgressKeyRange(playerId),
-      live: true
+      live: true,
     });
 
     return accumulateIntoChangeIdsArraySource(source);
@@ -55,10 +64,13 @@ module.exports = function (flumeLevelCustom) {
 
   function getObservableGamesIds(playerId) {
     const source = flumeLevelCustom.read({
-      ...allObservableGamesKeyRange()
-    })
+      ...allObservableGamesKeyRange(),
+    });
 
-    const otherPlayerGames = pull(source, pull.filter(update => !update.key.indexOf(playerId)))
+    const otherPlayerGames = pull(
+      source,
+      pull.filter((update) => !update.key.indexOf(playerId)),
+    );
 
     return accumulateIntoChangeIdsArraySource(otherPlayerGames);
   }
@@ -67,20 +79,27 @@ module.exports = function (flumeLevelCustom) {
     const source = flumeLevelCustom.read({
       ...allPlayerFinishedGamesKeyRange(playerId),
       reverse: true,
-      live: true
+      live: true,
     });
 
-    return pull(source, pull.filter((msg) => !msg.sync));
+    return pull(
+      source,
+      pull.filter((msg) => !msg.sync),
+    );
   }
 
   function getAllGamesInDb() {
     const source = flumeLevelCustom.read({
       ...allGamesKeyRange(),
       reverse: true,
-      live: true
+      live: true,
     });
 
-    return pull(source, pull.filter(x => !x.sync), pull.map(x => x.value))
+    return pull(
+      source,
+      pull.filter((x) => !x.sync),
+      pull.map((x) => x.value),
+    );
   }
 
   function gameHasPlayer(gameId, playerId, cb) {
@@ -90,29 +109,38 @@ module.exports = function (flumeLevelCustom) {
         return;
       }
 
-      const hasPlayer = result.value.inviter === playerId || result.value.invited === playerId;
+      const hasPlayer =
+        result.value.inviter === playerId || result.value.invited === playerId;
       cb(null, hasPlayer);
-    })
+    });
   }
 
   function weightedPlayFrequencyList(playerId, cb) {
-    const finishedGamesSource = flumeLevelCustom.read(...allPlayerFinishedGamesKeyRange(playerId));
+    const finishedGamesSource = flumeLevelCustom.read(
+      ...allPlayerFinishedGamesKeyRange(playerId),
+    );
 
-    pull(finishedGamesSource, pull.reduce((acc, data) => {
-      // TODO: It's a bit hacky to use the key like this
-      const otherPlayerId = data.key.split("/")[4];
+    pull(
+      finishedGamesSource,
+      pull.reduce(
+        (acc, data) => {
+          // TODO: It's a bit hacky to use the key like this
+          const otherPlayerId = data.key.split("/")[4];
 
-      const existingEntry = acc[otherPlayerId];
+          const existingEntry = acc[otherPlayerId];
 
-      if (existingEntry) {
-        acc[otherPlayerId] = existingEntry + 1;
-      } else {
-        acc[otherPlayerId] = 1;
-      }
+          if (existingEntry) {
+            acc[otherPlayerId] = existingEntry + 1;
+          } else {
+            acc[otherPlayerId] = 1;
+          }
 
-      return acc;
-    }, {}, cb))
-
+          return acc;
+        },
+        {},
+        cb,
+      ),
+    );
   }
 
   return {
