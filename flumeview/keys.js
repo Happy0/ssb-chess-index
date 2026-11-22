@@ -28,6 +28,14 @@ function allPlayerGamesInProgressKeyRange(authorId) {
   };
 }
 
+function allGamesInProgressKeyRange() {
+    return {
+    gt: `/games/live`,
+    lt: `/games/live\uffff`,
+  };
+}
+
+
 function playerGameAcceptanceTrackingKey(authorId, gameId) {
   return `/games/${gameId}/invited_accepted_assertion/${authorId}`;
 }
@@ -66,4 +74,5 @@ module.exports = {
   allPlayerPendingChallengeReceivedKeyRange,
   allPlayerGamesInProgressKeyRange,
   allPlayerFinishedGamesKeyRange,
+  allGamesInProgressKeyRange
 };
