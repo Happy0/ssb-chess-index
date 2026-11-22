@@ -1,4 +1,4 @@
-const { chessGameDbKey, allGamesInProgressKeyRange, allPlayerPendingChallengeSentKeyRange, allPlayerPendingChallengeReceivedKeyRange, allPlayerGamesInProgressKeyRange, allPlayerFinishedGamesKeyRange } = require('./keys');
+const { chessGameDbKey, allObservableGamesKeyRange, allPlayerPendingChallengeSentKeyRange, allPlayerPendingChallengeReceivedKeyRange, allPlayerGamesInProgressKeyRange, allPlayerFinishedGamesKeyRange } = require('./keys');
 const scan = require("pull-scan");
 const pull = require('pull-stream');
 
@@ -55,7 +55,7 @@ module.exports = function (flumeLevelCustom) {
 
   function getObservableGamesIds(playerId) {
     const source = flumeLevelCustom.read({
-      ...allGamesInProgressKeyRange()
+      ...allObservableGamesKeyRange()
     })
 
     const otherPlayerGames = pull(source, pull.filter(update => !update.key.indexOf(playerId)))

@@ -21,6 +21,18 @@ function playerGameInProgressKey(player, otherPlayer, gameId) {
   return `/games/live/${player}/${otherPlayer}/${gameId}`;
 }
 
+function observableGameKey(player, otherPlayer, gameId, date) {
+    return `/games/observe/${date}/${player}/${otherPlayer}/${gameId}`;
+}
+
+function allObservableGamesKeyRange() {
+  return {
+    gt: `/games/observe/`,
+    lt: `/games/observe/\uffff`,
+  };
+}
+
+
 function allPlayerGamesInProgressKeyRange(authorId) {
   return {
     gt: `/games/live/${authorId}/`,
@@ -82,5 +94,7 @@ module.exports = {
   allPlayerGamesInProgressKeyRange,
   allPlayerFinishedGamesKeyRange,
   allGamesInProgressKeyRange,
-  allGamesKeyRange
+  allGamesKeyRange,
+  observableGameKey,
+  allObservableGamesKeyRange
 };

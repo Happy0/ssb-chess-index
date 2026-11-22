@@ -10,7 +10,8 @@ const {
   playerGameAcceptanceTrackingKey,
   playerGameEndTrackingKey,
   playerGameEndKey,
-  playerGameInProgressKey
+  playerGameInProgressKey,
+  observableGameKey
 } = require("./keys");
 
 function isChessGameLifecycleMessage(msg) {
@@ -77,6 +78,7 @@ function createGameInProgressBatchEntries(
   gameId,
   invitingPlayer,
   invitedPlayer,
+  createdAt,
   messageType,
 ) {
   const type = messageType || "put";
@@ -92,6 +94,11 @@ function createGameInProgressBatchEntries(
       key: `${playerGameInProgressKey(invitedPlayer, invitingPlayer, gameId)}`,
       value: gameId,
     },
+    {
+      type: type,
+      key: observableGameKey(invitedPlayer, invitingPlayer, gameId, createdAt),
+      value: gameId
+    }
   ];
 }
 
@@ -139,7 +146,7 @@ async function getGameEndAssertion(db, inviter, invited, gameId) {
 
 function createGameEndedBatchEntries(gameId, inviter, invited, finishedTimestamp, createdTimestamp) {
   return [
-    ...createGameInProgressBatchEntries(gameId, inviter, invited, "del"),
+    ...createGameInProgressBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
     ...createInviteBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
     ...createGameFinishedBatchEntries(gameId, inviter, invited, finishedTimestamp),
   ];
@@ -184,6 +191,7 @@ async function processInvite(db, gameId, msg) {
         gameId,
         msg.value.author,
         msg.value.content.inviting,
+        msg.value.timestamp
       ),
       ...createInviteBatchEntries(
         gameId,
@@ -258,6 +266,7 @@ async function processInviteAcceptance(db, gameId, msg) {
         gameId,
         existingGameEntry.inviter,
         existingGameEntry.invited,
+        existingGameEntry.createdAt
       ),
       ...createInviteBatchEntries(
         gameId,
