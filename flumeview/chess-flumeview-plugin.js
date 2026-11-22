@@ -84,12 +84,12 @@ function createGameInProgressBatchEntries(
   return [
     {
       type: type,
-      key: `${playerGameInProgressKey(invitingPlayer)}`,
+      key: `${playerGameInProgressKey(invitingPlayer, gameId)}`,
       value: gameId,
     },
     {
       type: type,
-      key: `${playerGameInProgressKey(invitedPlayer)}`,
+      key: `${playerGameInProgressKey(invitedPlayer, gameId)}`,
       value: gameId,
     },
   ];
@@ -178,7 +178,7 @@ async function processInvite(db, gameId, msg) {
         },
       },
     ];
-  } else if (inviteAcceptedAssertion === true && getGameEndAssertion === false) {
+  } else if (inviteAcceptedAssertion && !gameFinishedAssertion) {
     return [
       ...createGameInProgressBatchEntries(
         gameId,
@@ -195,7 +195,7 @@ async function processInvite(db, gameId, msg) {
       // Add the missing player info
       {
         type: "put",
-        key: gameId,
+        key: chessGameDbKey(gameId),
         value: {
           gameId: chessGameDbKey(gameId),
           status: "in_progress",
@@ -304,6 +304,7 @@ async function processGameEnd(db, gameId, msg) {
         existingGameEntry.inviter,
         existingGameEntry.invited,
         msg.value.timestamp,
+        existingGameEntry.createdAt
       ),
       gameUpdate,
     ];

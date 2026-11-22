@@ -13,8 +13,9 @@ const codec = require("flumecodec");
 const pull = require("pull-stream");
 
 const possibleArrivalOrders = [
-  ["chess_invite", "chess_game_end", "chess_invite_accept"],
+  ["chess_invite", "chess_invite_accept", "chess_game_end"],
   ["chess_invite_accept", "chess_invite", "chess_game_end"],
+  ["chess_invite", "chess_game_end", "chess_invite_accept"],
   ["chess_invite_accept", "chess_game_end", "chess_invite"],
   ["chess_game_end", "chess_invite", "chess_invite_accept"],
   ["chess_game_end", "chess_invite_accept", "chess_invite"],
@@ -42,6 +43,54 @@ const happyPathScenario = {
     gamesEnded: true,
   },
 };
+
+const inviteAcceptArrivesBeforeInvitePath = {
+  scenarioDescription: "Invite acceptance arrives before invite path",
+  arrivalOrder: ["chess_invite_accept", "chess_invite", "chess_game_end"],
+  stateAfterFirst: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterSecond: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: true,
+    gamesEnded: false,
+  },
+  stateAfterThird: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+};
+
+const inviteGameEndAcceptanceOrder = {
+  scenarioDescription: "Invite acceptance arrives before invite path",
+  arrivalOrder: ["chess_invite", "chess_game_end", "chess_invite_accept"],
+  stateAfterFirst: {
+    inboundInvites: true,
+    outboundInvites: true,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterSecond: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+  stateAfterThird: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+};
+
+
 
 async function setupFlumeDbLog(items) {
   const randomFileName = crypto.randomUUID();
@@ -262,6 +311,14 @@ describe("Chess lifecycle message order arrival scenarios", async () => {
   test("Happy path", async () => {
     await testScenario(happyPathScenario);
   });
+
+  test("Invite acceptance arrives before invite path", async () => {
+    await testScenario(inviteAcceptArrivesBeforeInvitePath);
+  })
+
+  test("Invite, game end, invite acceptance order", async () => {
+    await testScenario(inviteGameEndAcceptanceOrder);
+  })
 
   // TODO: scenario where the 'invited' ends the game
 });
