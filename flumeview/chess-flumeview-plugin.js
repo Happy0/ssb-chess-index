@@ -84,12 +84,12 @@ function createGameInProgressBatchEntries(
   return [
     {
       type: type,
-      key: `${playerGameInProgressKey(invitingPlayer, gameId)}`,
+      key: `${playerGameInProgressKey(invitingPlayer, invitedPlayer, gameId)}`,
       value: gameId,
     },
     {
       type: type,
-      key: `${playerGameInProgressKey(invitedPlayer, gameId)}`,
+      key: `${playerGameInProgressKey(invitedPlayer, invitingPlayer, gameId)}`,
       value: gameId,
     },
   ];
@@ -104,12 +104,12 @@ function createGameFinishedBatchEntries(
   return [
     {
       type: "put",
-      key: playerGameEndKey(invitingPlayer, date, gameId),
+      key: playerGameEndKey(invitingPlayer, invitedPlayer, date, gameId),
       value: gameId,
     },
     {
       type: "put",
-      key: playerGameEndKey(invitedPlayer, date, gameId),
+      key: playerGameEndKey(invitedPlayer, invitingPlayer, date, gameId),
       value: gameId,
     },
   ];

@@ -17,8 +17,8 @@ function playerPendingChallengeReceivedKey(authorId, gameId, date) {
   return `/invites/${authorId}/inbound/date/${date}/${gameId}`;
 }
 
-function playerGameInProgressKey(authorId, gameId) {
-  return `/games/live/${authorId}/${gameId}`;
+function playerGameInProgressKey(player, otherPlayer, gameId) {
+  return `/games/live/${player}/${otherPlayer}/${gameId}`;
 }
 
 function allPlayerGamesInProgressKeyRange(authorId) {
@@ -31,7 +31,14 @@ function allPlayerGamesInProgressKeyRange(authorId) {
 function allGamesInProgressKeyRange() {
     return {
     gt: `/games/live`,
-    lt: `/games/live\uffff`,
+    lt: `/games/live/\uffff`,
+  };
+}
+
+function allGamesKeyRange() {
+  return {
+    gt: `/games`,
+    lt: `/games/\uffff`,
   };
 }
 
@@ -44,8 +51,8 @@ function playerGameEndTrackingKey(authorId, gameId) {
   return `/games/${gameId}/game_finished_assertion/${authorId}`;
 }
 
-function playerFinishedGameKey(author, date, gameId) {
-  return `/games/finished/${author}/${date}/game/${gameId}`;
+function playerFinishedGameKey(player, otherPlayer, date, gameId) {
+  return `/games/finished/${player}/${otherPlayer}/${date}/game/${gameId}`;
 }
 
 function allPlayerFinishedGamesKeyRange(authorId) {
@@ -74,5 +81,6 @@ module.exports = {
   allPlayerPendingChallengeReceivedKeyRange,
   allPlayerGamesInProgressKeyRange,
   allPlayerFinishedGamesKeyRange,
-  allGamesInProgressKeyRange
+  allGamesInProgressKeyRange,
+  allGamesKeyRange
 };

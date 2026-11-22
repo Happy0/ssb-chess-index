@@ -1,4 +1,4 @@
-const { allGamesInProgressKeyRange, allPlayerPendingChallengeSentKeyRange, allPlayerPendingChallengeReceivedKeyRange, allPlayerGamesInProgressKeyRange, allPlayerFinishedGamesKeyRange } = require('./keys');
+const { chessGameDbKey, allGamesInProgressKeyRange, allPlayerPendingChallengeSentKeyRange, allPlayerPendingChallengeReceivedKeyRange, allPlayerGamesInProgressKeyRange, allPlayerFinishedGamesKeyRange } = require('./keys');
 const scan = require("pull-scan");
 const pull = require('pull-stream');
 
@@ -73,15 +73,45 @@ module.exports = function (flumeLevelCustom) {
   }
 
   function getAllGamesInDb() {
+    const source = flumeLevelCustom.read({
+      ...allGamesKeyRange(),
+      reverse: true,
+      live: true
+    });
 
+    return pull(source, pull.filter(x => !x.sync), pull.map(x => x.value))
   }
 
   function gameHasPlayer(gameId, playerId, cb) {
+    flumeLevelCustom.get(chessGameDbKey(gameId), (err, result) => {
+      if (err) {
+        cb(err);
+        return;
+      }
 
+      const hasPlayer = result.value.inviter === playerId || result.value.invited === playerId;
+      cb(null, hasPlayer);
+    })
   }
 
   function weightedPlayFrequencyList(playerId, cb) {
-    
+    const finishedGamesSource = flumeLevelCustom.read(...allPlayerFinishedGamesKeyRange(playerId));
+
+    pull(finishedGamesSource, pull.reduce((acc, data) => {
+      // TODO: It's a bit hacky to use the key like this
+      const otherPlayerId = data.key.split("/")[4];
+
+      const existingEntry = acc[otherPlayerId];
+
+      if (existingEntry) {
+        acc[otherPlayerId] = existingEntry + 1;
+      } else {
+        acc[otherPlayerId] = 1;
+      }
+
+      return acc;
+    }, {}, cb))
+
   }
 
   return {
