@@ -139,7 +139,7 @@ async function getGameEndAssertion(db, inviter, invited, gameId) {
 
 function createGameEndedBatchEntries(gameId, inviter, invited, finishedTimestamp, createdTimestamp) {
   return [
-    ...createGameInProgressBatchEntries(gameId, inviter, inviter, "del"),
+    ...createGameInProgressBatchEntries(gameId, inviter, invited, "del"),
     ...createInviteBatchEntries(gameId, inviter, invited, createdTimestamp, "del"),
     ...createGameFinishedBatchEntries(gameId, inviter, invited, finishedTimestamp),
   ];

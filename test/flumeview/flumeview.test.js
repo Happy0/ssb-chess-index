@@ -125,7 +125,7 @@ const inviteAcceptMessage = {
     hash: "sha256",
     content: {
       type: "chess_invite_accept",
-      root: "%Zf7y1aoZ/51P5IzF6GEvXNRkBqs+X7r+hG5djhQfwpM=.sha256",
+      root: gameId,
       branch: "%Zf7y1aoZ/51P5IzF6GEvXNRkBqs+X7r+hG5djhQfwpM=.sha256",
     },
     signature:
@@ -146,7 +146,7 @@ const gameEndMessage = {
     content: {
       type: "chess_game_end",
       status: "resigned",
-      root: "%YtpT1cCD7HiCKRpHltKs2dPKGFPADCGhwDnQgD6y/3M=.sha256",
+      root: gameId,
       branch: "%5K8C9E+8UB/CkK7xHV7mWaTJYL3vfJXJQSyKn/vpbiQ=.sha256",
     },
     signature:
