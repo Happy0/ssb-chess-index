@@ -66,10 +66,11 @@ module.exports = function (flumeLevelCustom) {
   function getGamesFinishedIds(playerId) {
     const source = flumeLevelCustom.read({
       ...allPlayerFinishedGamesKeyRange(playerId),
-      reverse: true
+      reverse: true,
+      live: true
     });
 
-    return source;
+    return pull(source, pull.filter((msg) => !msg.sync));
   }
 
   function getAllGamesInDb() {
