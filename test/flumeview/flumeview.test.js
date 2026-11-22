@@ -13,11 +13,11 @@ const codec = require("flumecodec");
 const pull = require("pull-stream");
 
 const possibleArrivalOrders = [
-  ["chess_invite", "chess_invite_accept", "chess_game_end"],
-  ["chess_invite_accept", "chess_invite", "chess_game_end"],
-  ["chess_invite", "chess_game_end", "chess_invite_accept"],
-  ["chess_invite_accept", "chess_game_end", "chess_invite"],
-  ["chess_game_end", "chess_invite", "chess_invite_accept"],
+ // ["chess_invite", "chess_invite_accept", "chess_game_end"],
+ // ["chess_invite_accept", "chess_invite", "chess_game_end"],
+ // ["chess_invite", "chess_game_end", "chess_invite_accept"],
+//  ["chess_invite_accept", "chess_game_end", "chess_invite"],
+//  ["chess_game_end", "chess_invite", "chess_invite_accept"],
   ["chess_game_end", "chess_invite_accept", "chess_invite"],
 ];
 
@@ -68,7 +68,7 @@ const inviteAcceptArrivesBeforeInvitePath = {
 };
 
 const inviteGameEndAcceptanceOrder = {
-  scenarioDescription: "Invite acceptance arrives before invite path",
+  scenarioDescription: "Invite, game end, accept order",
   arrivalOrder: ["chess_invite", "chess_game_end", "chess_invite_accept"],
   stateAfterFirst: {
     inboundInvites: true,
@@ -89,6 +89,75 @@ const inviteGameEndAcceptanceOrder = {
     gamesEnded: true,
   },
 };
+
+const acceptEndInviteOrder = {
+  scenarioDescription: "Invite acceptance arrives before invite path",
+  arrivalOrder: ["chess_invite_accept", "chess_game_end", "chess_invite"],
+  stateAfterFirst: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterSecond: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterThird: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+};
+
+const endInviteAcceptanceOrder = {
+  scenarioDescription: "End, invite, acceptance order",
+  arrivalOrder: ["chess_game_end", "chess_invite", "chess_invite_accept"],
+  stateAfterFirst: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterSecond: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+  stateAfterThird: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+};
+
+const endAcceptanceInviteOrder = {
+  scenarioDescription: "End, acceptance, invite order",
+  arrivalOrder: ["chess_game_end", "chess_invite_accept", "chess_invite"],
+  stateAfterFirst: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterSecond: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: false,
+  },
+  stateAfterThird: {
+    inboundInvites: false,
+    outboundInvites: false,
+    gamesInProgress: false,
+    gamesEnded: true,
+  },
+}
 
 
 
@@ -312,13 +381,23 @@ describe("Chess lifecycle message order arrival scenarios", async () => {
     await testScenario(happyPathScenario);
   });
 
+  test("Invite, game end, invite acceptance receival order", async () => {
+    await testScenario(inviteGameEndAcceptanceOrder);
+  })
+
   test("Invite acceptance arrives before invite path", async () => {
     await testScenario(inviteAcceptArrivesBeforeInvitePath);
   })
 
-  test("Invite, game end, invite acceptance order", async () => {
-    await testScenario(inviteGameEndAcceptanceOrder);
+  test("Accept, end, invite receival order", async () => {
+    await testScenario(acceptEndInviteOrder)
   })
 
-  // TODO: scenario where the 'invited' ends the game
+  test("End, invite, accept order", async () => {
+    await testScenario(endInviteAcceptanceOrder);
+  })
+
+  test("End, accept, invite order", async () => {
+    await testScenario(endAcceptanceInviteOrder)
+  })
 });

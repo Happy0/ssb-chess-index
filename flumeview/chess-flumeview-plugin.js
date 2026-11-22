@@ -209,16 +209,16 @@ async function processInvite(db, gameId, msg) {
     return [
       ...createGameEndedBatchEntries(
         gameId,
-        existingGameEntry.inviter,
-        existingGameEntry.invited,
+        inviter,
+        invited,
         gameFinishedAssertion.finishedAt,
       ),
       {
         type: "put",
         key: chessGameDbKey(gameId),
         value: {
-          invited: existingGameEntry.invited,
-          inviter: existingGameEntry.invited,
+          invited: invited,
+          inviter: inviter,
           status: "finished",
         },
       },
