@@ -14,12 +14,10 @@
     "flumedb": "^2.1.8",
     "flumelog-offset": "^3.4.4",
     "prettier": "^3.9.10",
-    "ssb-client": "^4.9.0",
-    "tape": "^5.2.2",
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "@happy0/flumeview-level-custom": "file:../flumeview-level-custom",
+    "@happy0/flumeview-level-custom": "3.0.0",
     "pull-many": "^1.0.9",
     "pull-scan": "^1.0.0",
     "pull-stream": "^3.6.14"
