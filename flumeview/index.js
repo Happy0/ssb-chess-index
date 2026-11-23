@@ -132,7 +132,7 @@ module.exports = function (flumeLevelCustom) {
       pull.reduce(
         (acc, data) => {
           // TODO: It's a bit hacky to use the key like this
-          const otherPlayerId = data.key.split("/")[4];
+          const otherPlayerId = data.key.split("|")[4];
 
           const existingEntry = acc[otherPlayerId];
 
