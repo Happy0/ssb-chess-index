@@ -15,7 +15,7 @@ module.exports = function (flumeLevelCustom) {
       source,
       scan(
         (acc, update) => {
-          const updateType = acc.type || "put";
+          const updateType = update.type || "put";
 
           if (update.sync) {
             acc.sync = true;
@@ -69,11 +69,12 @@ module.exports = function (flumeLevelCustom) {
   function getObservableGamesIds(playerId) {
     const source = flumeLevelCustom.read({
       ...allObservableGamesKeyRange(),
+      live: true
     });
 
     const otherPlayerGames = pull(
       source,
-      pull.filter((update) => !update.key.indexOf(playerId)),
+      pull.filter((update) => update.sync || update.key.indexOf(playerId) === -1),
     );
 
     return accumulateIntoChangeIdsArraySource(otherPlayerGames);
