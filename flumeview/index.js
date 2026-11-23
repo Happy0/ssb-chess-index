@@ -10,7 +10,7 @@ const scan = require("pull-scan");
 const pull = require("pull-stream");
 
 module.exports = function (flumeLevelCustom) {
-  function accumulateIntoChangeIdsArraySource(source) {
+  function accumulateIntoChangeIdsArraySource(source, max) {
     return pull(
       source,
       scan(
@@ -34,6 +34,7 @@ module.exports = function (flumeLevelCustom) {
       ),
       pull.filter((acc) => acc.sync === true),
       pull.map((acc) => Object.values(acc.items)),
+      pull.map(gameArray => max !== null || max !== undefined ? gameArray.slice(0, max) : gameArray)
     );
   }
 
@@ -66,9 +67,10 @@ module.exports = function (flumeLevelCustom) {
     return accumulateIntoChangeIdsArraySource(source);
   }
 
-  function getObservableGamesIds(playerId) {
+  function getObservableGamesIds(playerId, max) {
     const source = flumeLevelCustom.read({
       ...allObservableGamesKeyRange(),
+      reverse: true,
       live: true
     });
 
@@ -77,7 +79,7 @@ module.exports = function (flumeLevelCustom) {
       pull.filter((update) => update.sync || update.key.indexOf(playerId) === -1),
     );
 
-    return accumulateIntoChangeIdsArraySource(otherPlayerGames);
+    return accumulateIntoChangeIdsArraySource(otherPlayerGames, max);
   }
 
   function getGamesFinishedIds(playerId) {
