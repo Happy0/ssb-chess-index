@@ -15,20 +15,22 @@ module.exports = function (flumeLevelCustom) {
       source,
       scan(
         (acc, update) => {
+          const updateType = acc.type || "put";
+
           if (update.sync) {
             acc.sync = true;
             return acc;
-          } else if (update.type === "put") {
+          } else if (updateType === "put") {
             acc.items[update.key] = update.value;
             return acc;
-          } else if (update.type === "del") {
+          } else if (updateType === "del") {
             delete acc.items[update.key];
             return acc;
           } else {
             return acc;
           }
         },
-        { arr: [], sync: false },
+        { items: {}, sync: false },
       ),
       pull.filter((acc) => acc.sync === true),
       pull.map((acc) => Object.values(acc.items)),
@@ -45,8 +47,10 @@ module.exports = function (flumeLevelCustom) {
   }
 
   function pendingChallengesReceived(playerId) {
+    const range = allPlayerPendingChallengeReceivedKeyRange(playerId);
+
     const source = flumeLevelCustom.read({
-      ...allPlayerPendingChallengeReceivedKeyRange(playerId),
+      ...range,
       live: true,
     });
 
@@ -110,14 +114,14 @@ module.exports = function (flumeLevelCustom) {
       }
 
       const hasPlayer =
-        result.value.inviter === playerId || result.value.invited === playerId;
+        result.inviter === playerId || result.invited === playerId;
       cb(null, hasPlayer);
     });
   }
 
   function weightedPlayFrequencyList(playerId, cb) {
     const finishedGamesSource = flumeLevelCustom.read(
-      ...allPlayerFinishedGamesKeyRange(playerId),
+      allPlayerFinishedGamesKeyRange(playerId),
     );
 
     pull(

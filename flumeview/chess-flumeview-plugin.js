@@ -341,7 +341,7 @@ async function chessMessageMapper(db, msg) {
   const gameId = getGameId(msg);
 
   if (!gameId) {
-    console.warn(`Unexpectedly no gameId for chess messae: ${msg}`);
+    console.warn(`Unexpectedly no gameId for chess message: ${msg}`);
     return [];
   }
 
@@ -355,12 +355,12 @@ async function chessMessageMapper(db, msg) {
     console.warn(
       `Message unexpectedly got past game message filter: ${JSON.stringify(msg)}`,
     );
-    return [];
   }
+
+  return [];
 }
 
 module.exports = FlumeViewLevelCustom(
   1,
-  mapperBuilder.sequentialMapper(chessMessageMapper),
-  isChessGameLifecycleMessage,
+  mapperBuilder.sequentialMapper(chessMessageMapper, isChessGameLifecycleMessage),
 );
